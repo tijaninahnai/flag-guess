@@ -1324,7 +1324,7 @@ function initOnlineGame() {
     return;
   }
 
-  const socket = io();
+  const socket = io('https://flag-guess.onrender.com');
   state.socket = socket;
 
   socket.emit('joinRoom', {
