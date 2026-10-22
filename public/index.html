@@ -59,13 +59,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
 /* ── SETUP SCREEN ── */
 .setup-wrap { max-width: 480px; margin: 0 auto; padding: 32px 20px; }
-.step-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 28px; }
-.step-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: .3s; }
-.step-dot.active { background: var(--accent); transform: scale(1.2); }
-.step-dot.done { background: var(--accent); opacity: .5; }
-
 .mode-badge { display: inline-flex; align-items: center; gap: 6px; background: #F0F0FF; border: 1px solid #CCCCFF; border-radius: 100px; padding: 5px 14px; font-size: .75rem; font-weight: 600; color: var(--accent); margin-bottom: 14px; transition: color 0.3s; }
-
 .setup-title { font-size: 1.7rem; font-weight: 800; margin-bottom: 8px; }
 .setup-sub { color: var(--muted); font-size: .9rem; margin-bottom: 28px; }
 
@@ -150,11 +144,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .board-flag .flag-name { font-size: .68rem; margin-top: 4px; text-align: center; }
 
 /* History log */
-.history-log { background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 14px; max-height: 160px; overflow-y: auto; }
-.history-item { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: .78rem; display: flex; gap: 8px; align-items: flex-start; }
+.history-log { background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 14px; max-height: 200px; overflow-y: auto; }
+.history-item { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: .8rem; display: flex; flex-direction: column; gap: 4px; }
+.history-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.history-q { color: var(--text); }
+.history-a { display: flex; align-items: center; gap: 8px; }
+.edit-btn { background: none; border: none; cursor: pointer; font-size: 1rem; opacity: 0.5; transition: 0.2s; padding: 2px; }
+.edit-btn:hover { opacity: 1; transform: scale(1.1); }
+.history-note { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--warning); background: #FFF8E1; padding: 4px 8px; border-radius: 4px; margin-top: 4px; cursor: pointer; width: fit-content; border: 1px solid #FFD54F; }
 
 /* Modal & Toast */
-#toast { position: fixed; top: 76px; left: 50%; transform: translateX(-50%) translateY(-20px); background: rgba(26,26,46,.95); color: white; padding: 10px 20px; border-radius: 100px; font-size: .82rem; font-weight: 600; z-index: 999; opacity: 0; transition: .3s; pointer-events: none; }
+#toast { position: fixed; top: 76px; left: 50%; transform: translateX(-50%) translateY(-20px); background: rgba(26,26,46,.95); color: white; padding: 12px 20px; border-radius: 10px; font-size: .85rem; font-weight: 600; z-index: 999; opacity: 0; transition: .3s; pointer-events: none; max-width: 90%; text-align: center; }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: .3s; }
 .modal-overlay.active { opacity: 1; pointer-events: all; }
@@ -168,7 +168,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .gameover-secrets { display: flex; gap: 16px; justify-content: center; margin-bottom: 24px; padding: 16px; background: white; border-radius: var(--radius); border: 1px solid var(--border); }
 .secret-reveal img { width: 64px; border-radius: 6px; margin-bottom: 6px; }
 
-/* Status Bar */
+/* Status Bar & Turn indicator */
 .online-status-bar { background: var(--accent); color: white; text-align: center; padding: 8px; font-size: .78rem; font-weight: 600; transition: background 0.3s; }
 .room-code-display { font-family: 'Courier New', Courier, monospace; font-size: 1.1rem; font-weight: 900; letter-spacing: .15em; background: rgba(255,255,255,.2); padding: 2px 8px; border-radius: 6px; }
 .turn-indicator { background: var(--accent); color: white; border-radius: var(--radius-sm); padding: 10px 14px; font-size: .82rem; font-weight: 700; text-align: center; margin-bottom: 14px; transition: background 0.3s; }
@@ -211,15 +211,6 @@ footer { text-align: center; padding: 24px; font-size: .75rem; color: var(--mute
         <label class="room-input-label">Room Code</label>
         <input class="room-input" id="room-code-input" placeholder="e.g. PLAY88" maxlength="8">
         <div class="room-info">💡 Share the code with your friend to connect.</div>
-      </div>
-      <div id="waiting-area" style="display:none">
-        <div class="waiting-indicator">
-          <div class="pulse-dot"></div>
-          <div>
-            <div style="font-size:.85rem;font-weight:700">Waiting for opponent...</div>
-            <div style="font-size:.75rem;color:var(--muted)">Room: <span id="waiting-room-code" style="font-weight:700;font-family:monospace"></span></div>
-          </div>
-        </div>
       </div>
     </div>
     <button class="btn" onclick="goToSizeSelect()">Continue →</button>
@@ -311,11 +302,6 @@ footer { text-align: center; padding: 24px; font-size: .75rem; color: var(--mute
         <button class="btn btn-secondary" onclick="switchToAsk()">← Back to Ask</button>
       </div>
       
-      <!-- Waiting -->
-      <div id="action-panel-waiting" class="waiting-indicator" style="display:none">
-        <div class="pulse-dot"></div><div>Waiting for answer...</div>
-      </div>
-
       <!-- Answer opponent -->
       <div id="action-panel-answer" class="turn-panel" style="display:none; background: #EEF0FF; border: 1px solid var(--accent)">
         <div class="turn-panel-title" style="color:var(--accent)">Opponent Asks</div>
@@ -329,12 +315,15 @@ footer { text-align: center; padding: 24px; font-size: .75rem; color: var(--mute
       <button class="btn" id="end-turn-row" style="display:none; margin-top:14px" onclick="endTurn()">End Turn →</button>
     </div>
 
+    <!-- History & Board -->
     <div class="history-log" id="history-log" style="display:none">
       <div id="history-items"></div>
     </div>
 
-    <div style="font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Flags — tap to eliminate / guess</div>
-    <div class="board-grid" id="board-grid"></div>
+    <div id="board-section">
+      <div style="font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Flags — tap to eliminate / guess</div>
+      <div class="board-grid" id="board-grid"></div>
+    </div>
   </div>
 </div>
 
@@ -371,6 +360,31 @@ footer { text-align: center; padding: 24px; font-size: .75rem; color: var(--mute
     <div style="display:flex;gap:10px">
       <button class="btn btn-warning" onclick="confirmGuess()">Confirm</button>
       <button class="btn btn-secondary" onclick="closeModal('modal-guess')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit History Modal -->
+<div class="modal-overlay" id="modal-edit-history">
+  <div class="modal-card">
+    <h3>Edit Answer</h3>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">Did you accidentally click the wrong answer? Change it here.</p>
+    <div style="background:#F5F5F7; padding:12px; border-radius:8px; margin-bottom:14px; font-weight:600;" id="edit-history-q">Question?</div>
+    
+    <input type="hidden" id="edit-history-idx">
+    
+    <label style="font-size:.75rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Correct Answer</label>
+    <div style="display:flex; gap:10px; margin-top:6px; margin-bottom:14px;">
+      <button class="btn btn-secondary" id="edit-btn-yes" onclick="setEditAnswerChoice(true)">✓ YES</button>
+      <button class="btn btn-secondary" id="edit-btn-no" onclick="setEditAnswerChoice(false)">✗ NO</button>
+    </div>
+
+    <label style="font-size:.75rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Reason (Optional)</label>
+    <input class="turn-input" id="edit-history-reason" placeholder="e.g. Oops, I didn't see the red stripe" style="margin-top:6px; margin-bottom:18px;">
+
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-warning" onclick="saveHistoryEdit()">Update Answer</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-edit-history')">Cancel</button>
     </div>
   </div>
 </div>
@@ -414,10 +428,11 @@ let state = {
 
 let guessMode = false;
 let pendingGuessFlag = null;
+let editPendingAnswer = null;
 
-function showToast(msg, dur=2500) {
+function showToast(msg, dur=3500) {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
+  t.innerHTML = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), dur);
 }
 
@@ -428,7 +443,6 @@ function showScreen(id) {
   });
   const activeScreen = document.getElementById(id);
   activeScreen.style.display = 'block';
-  // Force reflow to restart animation
   void activeScreen.offsetWidth; 
   activeScreen.classList.add('active');
   window.scrollTo(0, 0);
@@ -440,7 +454,6 @@ function flagById(id) { return ALL_FLAGS.find(f => f.id === id); }
 function currentPlayerObj() { return state.currentPlayer === 1 ? state.p1 : state.p2; }
 function otherPlayerObj() { return state.currentPlayer === 1 ? state.p2 : state.p1; }
 
-// THEME UPDATE
 function updateThemeColor(playerNum) {
   const root = document.documentElement;
   if (playerNum === 1) {
@@ -452,7 +465,6 @@ function updateThemeColor(playerNum) {
   }
 }
 
-// SETUP
 function selectMode(mode) {
   state.mode = mode;
   document.getElementById('mode-local').classList.toggle('selected', mode === 'local');
@@ -479,7 +491,6 @@ function selectSize(n) {
 function startGame() {
   state.flags = state.boardSize === 24 ? [...ALL_FLAGS] : ALL_FLAGS.slice(0, 12);
   updateThemeColor(1);
-  
   if (state.mode === 'online') {
     showToast("Online not fully implemented in this snippet.");
   } else {
@@ -514,7 +525,7 @@ function selectFlagP2(id) {
 
 function confirmP1Selection() {
   state.p1.secretFlag = p1SelectTemp;
-  updateThemeColor(2); // Switch theme for P2
+  updateThemeColor(2);
   showScreen('screen-switch-p2');
 }
 function startP2Selection() {
@@ -523,7 +534,7 @@ function startP2Selection() {
 }
 function confirmP2Selection() {
   state.p2.secretFlag = p2SelectTemp;
-  updateThemeColor(1); // Switch back to P1 theme
+  updateThemeColor(1);
   showScreen('screen-switch-start');
 }
 
@@ -533,14 +544,17 @@ function startGameBoard() {
   showScreen('screen-game');
 }
 
-// GAME LOGIC
 function renderBoard() {
   const cur = currentPlayerObj();
   document.getElementById('board-player-title').textContent = `${cur.name}'s Board`;
   
-  // AUTO LOCK SECRET FLAG
   state.secretVisible = false;
   document.getElementById('secret-flag-display').textContent = 'Hidden';
+  
+  // Zorg dat het speelbord en de log zichtbaar zijn in de normale beurt
+  document.getElementById('board-section').style.display = 'block';
+  document.getElementById('turn-indicator').style.display = 'block';
+  document.getElementById('history-log').style.display = state.history.length ? 'block' : 'none';
   
   const ti = document.getElementById('turn-indicator');
   if (cur.actionUsed) {
@@ -559,7 +573,7 @@ function renderBoard() {
 }
 
 function showActionPanel(which) {
-  ['ask','guess','waiting','answer'].forEach(p => document.getElementById(`action-panel-${p}`).style.display = 'none');
+  ['ask','guess','answer'].forEach(p => document.getElementById(`action-panel-${p}`).style.display = 'none');
   if (which !== 'none') document.getElementById(`action-panel-${which}`).style.display = 'block';
 }
 
@@ -604,7 +618,6 @@ function confirmGuess() {
   if (correct) {
     endGame(state.currentPlayer);
   } else {
-    // Find the element on the board and add shake class
     const flagEls = document.querySelectorAll('.board-flag');
     flagEls.forEach(el => {
       if(el.outerHTML.includes(pendingGuessFlag)) {
@@ -629,39 +642,45 @@ function submitQuestion() {
   currentPlayerObj().actionUsed = true;
   state.pendingQuestion = { from: currentPlayerObj().name, text };
   
-  showActionPanel('waiting');
   document.getElementById('end-turn-row').style.display = 'none';
   document.getElementById('question-input').value = '';
   
   setTimeout(() => {
     const other = otherPlayerObj();
-    updateThemeColor(state.currentPlayer === 1 ? 2 : 1); // Switch to opponent color
+    updateThemeColor(state.currentPlayer === 1 ? 2 : 1);
     document.getElementById('switch-turn-title').textContent = `Pass to ${other.name}`;
     document.getElementById('switch-turn-sub').textContent = `Answer the question`;
     document.getElementById('switch-turn-btn').onclick = () => showAnswerPanel();
     showScreen('screen-switch-turn');
-  }, 700);
+  }, 500);
 }
 
 function showAnswerPanel() {
   const other = state.currentPlayer === 1 ? state.p2 : state.p1;
-  document.getElementById('board-player-title').textContent = `${other.name}'s Board`;
-  state.secretVisible = false; // Force lock again
+  document.getElementById('board-player-title').textContent = `${other.name}, answer the question!`;
+  state.secretVisible = false;
   document.getElementById('secret-flag-display').textContent = 'Hidden';
+  
+  // VERBERG HET BORD EN ANDERE UI TIJDENS HET BEANTWOORDEN
+  document.getElementById('board-section').style.display = 'none';
+  document.getElementById('turn-indicator').style.display = 'none';
+  document.getElementById('history-log').style.display = 'none';
   
   showActionPanel('answer');
   document.getElementById('answer-question-text').textContent = state.pendingQuestion.text;
-  document.getElementById('board-grid').innerHTML = state.flags.map(f => {
-    const elim = other.eliminated.includes(f.id);
-    return `<div class="board-flag ${elim ? 'eliminated' : ''}"><div class="flag-inner"><div class="flag-front"><img class="flag-img" src="${f.img}"><div class="flag-name">${f.name}</div></div><div class="flag-back">✕</div></div></div>`;
-  }).join('');
   showScreen('screen-game');
 }
 
 function submitAnswer(ans) {
-  state.history.push({ type: 'question', text: state.pendingQuestion.text, answer: ans });
+  state.history.push({ 
+    type: 'question', 
+    text: state.pendingQuestion.text, 
+    answer: ans,
+    originalAnswer: null, // Voor toekomstige edits
+    edited: false
+  });
   state.pendingQuestion = null;
-  state.currentPlayer = state.currentPlayer === 1 ? 2 : 1; // It is now the answering player's turn
+  state.currentPlayer = state.currentPlayer === 1 ? 2 : 1;
   updateThemeColor(state.currentPlayer);
   renderBoard();
 }
@@ -692,13 +711,85 @@ function endTurn() {
   showScreen('screen-switch-turn');
 }
 
+// ── EDIT HISTORY LOGICA ──
 function renderHistory() {
   const log = document.getElementById('history-log');
   if (!state.history.length) { log.style.display = 'none'; return; }
   log.style.display = 'block';
-  document.getElementById('history-items').innerHTML = state.history.slice().reverse().map(h => 
-    `<div class="history-item"><strong>Q:</strong> "${h.text}" → <b style="color:${h.answer ? 'var(--success)' : 'var(--danger)'}">${h.answer ? 'YES' : 'NO'}</b></div>`
-  ).join('');
+  
+  document.getElementById('history-items').innerHTML = state.history.slice().reverse().map((h, i) => {
+    const realIdx = state.history.length - 1 - i;
+    
+    const ansColor = h.answer ? 'var(--success)' : 'var(--danger)';
+    const ansText = h.answer ? 'YES' : 'NO';
+    
+    // Potloodje om te bewerken
+    const editBtn = `<button class="edit-btn" onclick="openEditHistory(${realIdx})">✏️</button>`;
+    
+    // Zichtbare notitie als het is aangepast
+    const editNote = h.edited 
+      ? `<div class="history-note" onclick="showToast('<b>Reden van wijziging:</b><br>${h.editReason || 'Geen reden opgegeven'}', 5000)">
+           ⚠️ Was oorspronkelijk ${h.originalAnswer ? 'YES' : 'NO'} (Tap voor reden)
+         </div>` 
+      : '';
+
+    return `
+      <div class="history-item">
+        <div class="history-row">
+          <span class="history-q"><strong>Q:</strong> "${h.text}"</span>
+          <div class="history-a">
+            <b style="color:${ansColor}">${ansText}</b>
+            ${editBtn}
+          </div>
+        </div>
+        ${editNote}
+      </div>
+    `;
+  }).join('');
+}
+
+function openEditHistory(idx) {
+  const h = state.history[idx];
+  document.getElementById('edit-history-idx').value = idx;
+  document.getElementById('edit-history-q').textContent = `"${h.text}"`;
+  document.getElementById('edit-history-reason').value = '';
+  
+  // Set default selection to the current answer
+  setEditAnswerChoice(h.answer);
+  openModal('modal-edit-history');
+}
+
+function setEditAnswerChoice(isYes) {
+  editPendingAnswer = isYes;
+  const btnYes = document.getElementById('edit-btn-yes');
+  const btnNo = document.getElementById('edit-btn-no');
+  
+  btnYes.style.background = isYes ? 'var(--success)' : 'white';
+  btnYes.style.color = isYes ? 'white' : 'var(--text)';
+  
+  btnNo.style.background = !isYes ? 'var(--danger)' : 'white';
+  btnNo.style.color = !isYes ? 'white' : 'var(--text)';
+}
+
+function saveHistoryEdit() {
+  const idx = document.getElementById('edit-history-idx').value;
+  const h = state.history[idx];
+  const reason = document.getElementById('edit-history-reason').value.trim();
+  
+  // Als het antwoord daadwerkelijk is veranderd
+  if (h.answer !== editPendingAnswer) {
+    if (!h.edited) {
+      h.originalAnswer = h.answer; // Bewaar origineel
+    }
+    h.answer = editPendingAnswer;
+    h.edited = true;
+    h.editReason = reason;
+    
+    showToast(`Antwoord gewijzigd! Pas je speelbord aan indien nodig.`);
+  }
+  
+  closeModal('modal-edit-history');
+  renderHistory();
 }
 
 function endGame(winnerPlayer) {
@@ -709,9 +800,7 @@ function endGame(winnerPlayer) {
   showScreen('screen-gameover');
 }
 
-// FIXED PLAY AGAIN
 function playAgain() {
-  // Volledige state reset
   state.p1.secretFlag = null;
   state.p2.secretFlag = null;
   state.p1.eliminated = [];
@@ -723,8 +812,7 @@ function playAgain() {
   p1SelectTemp = null;
   p2SelectTemp = null;
   guessMode = false;
-
-  updateThemeColor(1); // Terug naar Speler 1 kleur
+  updateThemeColor(1);
   
   if (state.mode === 'online') {
     showToast("Nieuwe game aanvraag nog niet gekoppeld aan server in dit snippet.");
